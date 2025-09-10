@@ -1,0 +1,17 @@
+{% extends 'surveys/base.html' %}
+
+{% block title %}Thank You!{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto text-center">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="text-success">Thank You!</h2>
+                <p>Your survey response has been submitted successfully.</p>
+                <a href="{% url 'surveys:survey_list' %}" class="btn btn-primary">Take Another Survey</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
