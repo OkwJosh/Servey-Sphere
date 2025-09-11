@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Sign Up</h2>
+  
+  {% if form.non_field_errors %}
+    <div class="error">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+  
+  <form method="post" id="signupForm" novalidate>
+    {% csrf_token %}
+    
+    <!-- Username Field -->
+    <div class="field">
+      <label for="{{ form.username.id_for_label }}">Username:</label>
+      <input 
+        type="text" 
+        id="{{ form.username.id_for_label }}"
+        name="{{ form.username.name }}"
+        value="{{ form.username.value|default:'' }}"
+        required
+        minlength="3"
+        maxlength="150"
+      >
+      {% if form.username.errors %}
+        <div class="error">
+          {{ form.username.errors|first }}
+        </div>
+      {% endif %}
+      <div class="error" id="username-error"></div>
+    </div>
+
+    <!-- Email Field (if present) -->
+    {% if form.email %}
+    <div class="field">
+      <label for="{{ form.email.id_for_label }}">Email:</label>
+      <input 
+        type="email" 
+        id="{{ form.email.id_for_label }}"
+        name="{{ form.email.name }}"
+        value="{{ form.email.value|default:'' }}"
+      >
+      {% if form.email.errors %}
+        <div class="error">
+          {{ form.email.errors|first }}
+        </div>
+      {% endif %}
+      <div class="error" id="email-error"></div>
+    </div>
+    {% endif %}
+
+    <!-- First Name Field (if present) -->
+    {% if form.first_name %}
+    <div class="field">
+      <label for="{{ form.first_name.id_for_label }}">First Name:</label>
+      <input 
+        type="text" 
+        id="{{ form.first_name.id_for_label }}"
+        name="{{ form.first_name.name }}"
+        value="{{ form.first_name.value|default:'' }}"
+      >
+      {% if form.first_name.errors %}
+        <div class="error">
+          {{ form.first_name.errors|first }}
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Last Name Field (if present) -->
+    {% if form.last_name %}
+    <div class="field">
+      <label for="{{ form.last_name.id_for_label }}">Last Name:</label>
+      <input 
+        type="text" 
+        id="{{ form.last_name.id_for_label }}"
+        name="{{ form.last_name.name }}"
+        value="{{ form.last_name.value|default:'' }}"
+      >
+      {% if form.last_name.errors %}
+        <div class="error">
+          {{ form.last_name.errors|first }}
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Password1 Field -->
+    <div class="field">
+      <label for="{{ form.password1.id_for_label }}">Password:</label>
+      <input 
+        type="password" 
+        id="{{ form.password1.id_for_label }}"
+        name="{{ form.password1.name }}"
+        required
+        minlength="8"
+      >
+      {% if form.password1.errors %}
+        <div class="error">
+          {{ form.password1.errors|first }}
+        </div>
+      {% endif %}
+      <div class="error" id="password1-error"></div>
+    </div>
+
+    <!-- Password2 Field -->
+    <div class="field">
+      <label for="{{ form.password2.id_for_label }}">Confirm Password:</label>
+      <input 
+        type="password" 
+        id="{{ form.password2.id_for_label }}"
+        name="{{ form.password2.name }}"
+        required
+        minlength="8"
+      >
+      {% if form.password2.errors %}
+        <div class="error">
+          {{ form.password2.errors|first }}
+        </div>
+      {% endif %}
+      <div class="error" id="password2-error"></div>
+    </div>
+
+    <button type="submit">Sign Up</button>
+  </form>
+  
+  <p>Already have an account? <a href="{% url 'login' %}">Login here</a>.</p>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('signupForm');
+      const username = document.getElementById('{{ form.username.id_for_label }}');
+      const password1 = document.getElementById('{{ form.password1.id_for_label }}');
+      const password2 = document.getElementById('{{ form.password2.id_for_label }}');
+      
+      // Clear previous error messages
+      function clearErrors() {
+        document.querySelectorAll('.error').forEach(error => {
+          if (error.id.includes('-error')) {
+            error.textContent = '';
+          }
+        });
+      }
+
+      // Username validation
+      username.addEventListener('blur', function() {
+        const usernameError = document.getElementById('username-error');
+        const value = this.value.trim();
+        
+        if (value.length < 3) {
+          usernameError.textContent = 'Username must be at least 3 characters long.';
+        } else if (value.length > 150) {
+          usernameError.textContent = 'Username must be no more than 150 characters.';
+        } else if (!/^[\w.@+-]+$/.test(value)) {
+          usernameError.textContent = 'Username may contain only letters, numbers, and @/./+/-/_ characters.';
+        } else {
+          usernameError.textContent = '';
+        }
+      });
+
+      // Password strength validation
+      password1.addEventListener('input', function() {
+        const passwordError = document.getElementById('password1-error');
+        const value = this.value;
+        const errors = [];
+
+        if (value.length < 8) {
+          errors.push('Password must be at least 8 characters long.');
+        }
+        if (!/[A-Za-z]/.test(value)) {
+          errors.push('Password must contain at least one letter.');
+        }
+        if (!/[0-9]/.test(value)) {
+          errors.push('Password must contain at least one number.');
+        }
+        if (value.toLowerCase().includes(username.value.toLowerCase()) && username.value.length > 0) {
+          errors.push('Password cannot be too similar to username.');
+        }
+
+        passwordError.textContent = errors.length > 0 ? errors[0] : '';
+      });
+
+      // Password confirmation validation
+      password2.addEventListener('input', function() {
+        const password2Error = document.getElementById('password2-error');
+        
+        if (this.value !== password1.value) {
+          password2Error.textContent = 'Passwords do not match.';
+        } else {
+          password2Error.textContent = '';
+        }
+      });
+
+      // Form submission validation
+      form.addEventListener('submit', function(e) {
+        clearErrors();
+        let hasErrors = false;
+
+        // Check username
+        if (username.value.trim().length < 3) {
+          document.getElementById('username-error').textContent = 'Username is required and must be at least 3 characters.';
+          hasErrors = true;
+        }
+
+        // Check password1
+        if (password1.value.length < 8) {
+          document.getElementById('password1-error').textContent = 'Password must be at least 8 characters long.';
+          hasErrors = true;
+        }
+
+        // Check password2
+        if (password1.value !== password2.value) {
+          document.getElementById('password2-error').textContent = 'Passwords do not match.';
+          hasErrors = true;
+        }
+
+        if (hasErrors) {
+          e.preventDefault();
+          return false;
+        }
+      });
+    });
+  </script>
+{% endblock %}

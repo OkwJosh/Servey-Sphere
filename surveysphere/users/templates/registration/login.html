@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Login</h2>
+  
+  {% if form.non_field_errors %}
+    <div class="error">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+  
+  <form method="post" id="loginForm" novalidate>
+    {% csrf_token %}
+    
+    <!-- Username Field -->
+    <div class="field">
+      <label for="{{ form.username.id_for_label }}">Username:</label>
+      <input 
+        type="text" 
+        id="{{ form.username.id_for_label }}"
+        name="{{ form.username.name }}"
+        value="{{ form.username.value|default:'' }}"
+        required
+        autocomplete="username"
+      >
+      {% if form.username.errors %}
+        <div class="error">
+          {{ form.username.errors|first }}
+        </div>
+      {% endif %}
+      <div class="error" id="username-error"></div>
+    </div>
+
+    <!-- Password Field -->
+    <div class="field">
+      <label for="{{ form.password.id_for_label }}">Password:</label>
+      <input 
+        type="password" 
+        id="{{ form.password.id_for_label }}"
+        name="{{ form.password.name }}"
+        required
+        autocomplete="current-password"
+      >
+      {% if form.password.errors %}
+        <div class="error">
+          {{ form.password.errors|first }}
+        </div>
+      {% endif %}
+      <div class="error" id="password-error"></div>
+    </div>
+
+    <button type="submit">Login</button>
+  </form>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('loginForm');
+      const username = document.getElementById('{{ form.username.id_for_label }}');
+      const password = document.getElementById('{{ form.password.id_for_label }}');
+      
+      // Clear previous error messages
+      function clearErrors() {
+        document.querySelectorAll('.error').forEach(error => {
+          if (error.id.includes('-error')) {
+            error.textContent = '';
+          }
+        });
+      }
+
+      // Username validation
+      username.addEventListener('blur', function() {
+        const usernameError = document.getElementById('username-error');
+        const value = this.value.trim();
+        
+        if (value.length === 0) {
+          usernameError.textContent = 'Username is required.';
+        } else {
+          usernameError.textContent = '';
+        }
+      });
+
+      // Password validation
+      password.addEventListener('blur', function() {
+        const passwordError = document.getElementById('password-error');
+        const value = this.value;
+        
+        if (value.length === 0) {
+          passwordError.textContent = 'Password is required.';
+        } else {
+          passwordError.textContent = '';
+        }
+      });
+
+      // Clear errors when user starts typing
+      username.addEventListener('input', function() {
+        if (this.value.length > 0) {
+          document.getElementById('username-error').textContent = '';
+        }
+      });
+
+      password.addEventListener('input', function() {
+        if (this.value.length > 0) {
+          document.getElementById('password-error').textContent = '';
+        }
+      });
+
+      // Form submission validation
+      form.addEventListener('submit', function(e) {
+        clearErrors();
+        let hasErrors = false;
+
+        // Check username
+        if (username.value.trim().length === 0) {
+          document.getElementById('username-error').textContent = 'Username is required.';
+          username.focus();
+          hasErrors = true;
+        }
+
+        // Check password
+        if (password.value.length === 0) {
+          document.getElementById('password-error').textContent = 'Password is required.';
+          if (!hasErrors) {
+            password.focus();
+          }
+          hasErrors = true;
+        }
+
+        if (hasErrors) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      // Handle form submission feedback
+      form.addEventListener('submit', function() {
+        const submitButton = this.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Logging in...';
+        
+        // Re-enable button after a delay in case of validation errors
+        setTimeout(function() {
+          submitButton.disabled = false;
+          submitButton.textContent = 'Login';
+        }, 3000);
+      });
+    });
+  </script>
+{% endblock %}

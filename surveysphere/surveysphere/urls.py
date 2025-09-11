@@ -22,9 +22,14 @@ from django.urls import path
 from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('surveys/', include('surveys.urls')), 
-    path('', lambda request: redirect('surveys:survey_list')), 
+     path("accounts/", include("django.contrib.auth.urls")),
+     path("", include("users.urls")),
+    path('', lambda request: redirect('login')), 
+    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
+    path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),
 ]
