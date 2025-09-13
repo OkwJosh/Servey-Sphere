@@ -50,10 +50,8 @@ class Question(models.Model):
         return f"{self.survey.title} - {self.text[:50]}"
     
     def clean(self):
-        # Validate that choice questions have options
-        if self.question_type in ['radio', 'checkbox'] and not self.options.exists():
-            if self.pk:  # Only check if question already exists
-                raise ValidationError("Choice questions must have at least one option.")
+        if self.pk and self.question_type in ['radio', 'checkbox'] and not self.options.exists():
+            raise ValidationError("Choice questions must have at least one option.")
 
 
 class Option(models.Model):
@@ -84,8 +82,6 @@ class Response(models.Model):
     
     @property
     def completion_time(self):
-        """Calculate time taken to complete survey (if tracking start time)"""
-        # You could add a started_at field to track this
         pass
 
 
@@ -93,17 +89,14 @@ class Answer(models.Model):
     response = models.ForeignKey(Response, on_delete=models.CASCADE, related_name="answers")
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     
-    # For choice-based questions
-    selected_options = models.ManyToManyField(Option, blank=True)  # Changed to M2M for multiple choice
-    
-    # For text-based questions
+    selected_options = models.ManyToManyField(Option, blank=True)  
+
     text_answer = models.TextField(blank=True)
     
-    # For numeric questions
     numeric_answer = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     class Meta:
-        unique_together = ['response', 'question']  # One answer per question per response
+        unique_together = ['response', 'question']  
 
     def __str__(self):
         try:
@@ -114,7 +107,6 @@ class Answer(models.Model):
             return f"Answer {self.id}" if self.id else "New Answer"
     
     def clean(self):
-        # Validation based on question type
         if self.question.question_type == 'text' and not self.text_answer:
             if self.question.is_required:
                 raise ValidationError("Text answer is required for this question.")

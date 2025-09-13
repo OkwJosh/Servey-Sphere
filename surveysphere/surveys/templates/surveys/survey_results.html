@@ -1,0 +1,49 @@
+{% extends "surveys/base.html" %}
+
+{% block title %}Survey Results - {{ survey.title }}{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <h2>Results: {{ survey.title }}</h2>
+    <p>Total Responses: <strong>{{ survey.response_count }}</strong></p>
+
+    {% for q in questions_with_results %}
+        <div class="card my-3">
+            <div class="card-header">
+                {{ forloop.counter }}. {{ q.question }}
+                <span class="badge bg-secondary ms-2">{{ q.total }} responses</span>
+            </div>
+            <div class="card-body">
+                {% if q.type == "radio" or q.type == "checkbox" %}
+                    <ul>
+                        {% for opt in q.results.options %}
+                            <li>
+                                {{ opt.option }} — {{ opt.count }} ({{ opt.percentage }}%)
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                {% elif q.type == "number" or q.type == "rating" %}
+                    {% if q.results.average %}
+                        <p><strong>Average:</strong> {{ q.results.average|floatformat:2 }}</p>
+                        <p>All responses: {{ q.results.answers|join:", " }}</p>
+                    {% else %}
+                        <p>No numeric answers yet.</p>
+                    {% endif %}
+
+                {% else %}
+                    {% if q.results.answers %}
+                        <ul>
+                            {% for ans in q.results.answers %}
+                                <li>“{{ ans }}”</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No responses yet.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

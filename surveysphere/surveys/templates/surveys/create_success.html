@@ -1,0 +1,349 @@
+{% extends 'surveys/base.html' %}
+
+{% block title %}Survey Created Successfully!{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="success-card">
+            <div class="card-body text-center p-5">
+                <!-- Success Animation -->
+                <div class="success-animation mb-4">
+                    <div class="checkmark-circle">
+                        <div class="checkmark"></div>
+                    </div>
+                </div>
+                
+                <!-- Success Message -->
+                <h2 class="success-title mb-3">Survey Created Successfully!</h2>
+                <p class="success-subtitle mb-4">
+                    Your survey has been created and is ready to be shared with participants. 
+                    Start collecting responses now!
+                </p>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons mb-4">
+                    <a href="{% url 'surveys:survey_create' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-plus me-2"></i>
+                        Create Another
+                    </a>
+                </div>
+                
+                <!-- Survey Info -->
+            
+                
+                <!-- Quick Actions -->
+                <div class="quick-actions mt-4">
+                    <a href="{% url 'surveys:survey_list' %}" class="quick-action-link">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Back to All Surveys
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Success Card Styling */
+.success-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-strong);
+    position: relative;
+    overflow: hidden;
+    animation: slideInUp 0.6s ease-out;
+}
+
+.success-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--success-gradient);
+    background-size: 200% 100%;
+    animation: gradientFlow 3s ease infinite;
+}
+
+/* Success Animation */
+.success-animation {
+    position: relative;
+    display: inline-block;
+}
+
+.checkmark-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: var(--success-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: var(--shadow-medium);
+    animation: bounceIn 0.8s ease-out 0.2s both;
+    position: relative;
+}
+
+.checkmark-circle::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--success-gradient);
+    animation: pulse 2s ease-in-out infinite;
+    opacity: 0.3;
+}
+
+.checkmark {
+    width: 40px;
+    height: 40px;
+    position: relative;
+}
+
+.checkmark::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 32px;
+    border: 4px solid white;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+    left: 50%;
+    top: 50%;
+    margin-left: -9px;
+    margin-top: -20px;
+    animation: checkmarkDraw 0.5s ease-out 0.5s both;
+}
+
+/* Typography */
+.success-title {
+    font-weight: 700;
+    font-size: 2.2rem;
+    background: var(--success-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    animation: fadeInUp 0.6s ease-out 0.3s both;
+}
+
+.success-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 500;
+    line-height: 1.6;
+    max-width: 400px;
+    margin: 0 auto 2rem;
+    animation: fadeInUp 0.6s ease-out 0.4s both;
+}
+
+/* Action Buttons */
+.action-buttons {
+    animation: fadeInUp 0.6s ease-out 0.5s both;
+}
+
+.btn-lg {
+    padding: 1rem 2rem !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    border-radius: var(--border-radius) !important;
+    box-shadow: var(--shadow-medium) !important;
+    transition: all 0.3s ease !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-lg:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: var(--shadow-strong) !important;
+}
+
+/* Survey Info */
+.survey-info {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: fadeInUp 0.6s ease-out 0.6s both;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .info-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-light);
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.info-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-top: 0.25rem;
+}
+
+/* Quick Actions */
+.quick-actions {
+    animation: fadeInUp 0.6s ease-out 0.7s both;
+}
+
+.quick-action-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    border: 1px solid transparent;
+}
+
+.quick-action-link:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    border-color: rgba(102, 126, 234, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Animations */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes checkmarkDraw {
+    from {
+        opacity: 0;
+        transform: rotate(45deg) scale(0);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(45deg) scale(1);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.1;
+    }
+}
+
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .success-card .card-body {
+        padding: 2rem 1.5rem !important;
+    }
+    
+    .success-title {
+        font-size: 1.8rem;
+    }
+    
+    .btn-lg {
+        display: block;
+        margin-bottom: 1rem !important;
+        margin-right: 0 !important;
+    }
+    
+    .checkmark-circle {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .checkmark::after {
+        width: 14px;
+        height: 26px;
+        margin-left: -7px;
+        margin-top: -16px;
+    }
+}
+</style>
+{% endblock %}

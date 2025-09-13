@@ -1,147 +1,560 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Login</h2>
-  
-  {% if form.non_field_errors %}
-    <div class="error">
-      {{ form.non_field_errors }}
-    </div>
-  {% endif %}
-  
-  <form method="post" id="loginForm" novalidate>
-    {% csrf_token %}
+<style>
+    .login-hero {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        margin-bottom: 3rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .login-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
+        animation: heroFloat 20s ease-in-out infinite;
+    }
+
+    @keyframes heroFloat {
+        0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+        50% { transform: translate(-50%, -50%) rotate(5deg); }
+    }
+
+    @keyframes gradientFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .login-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .form-container {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+        backdrop-filter: blur(15px);
+        border-radius: var(--border-radius-lg);
+        padding: 3rem;
+        box-shadow: var(--shadow-strong);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .form-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #4facfe);
+        background-size: 300% 100%;
+        animation: gradientFlow 4s ease infinite;
+    }
+
+    .field {
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .field label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .field label::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: inline-block;
+    }
+
+    .field input {
+        border: 2px solid transparent;
+        border-radius: var(--border-radius);
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #e2e8f0, #f1f5f9) border-box;
+        transition: all 0.3s ease;
+        width: 100%;
+        position: relative;
+    }
+
+    .field input:focus {
+        outline: none;
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #667eea, #764ba2) border-box;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .field input::placeholder {
+        color: #94a3b8;
+        transition: all 0.3s ease;
+    }
+
+    .field input:focus::placeholder {
+        opacity: 0.7;
+        transform: translateY(-2px);
+    }
+
+    .error {
+        color: #ff416c;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: block;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .field input.is-invalid {
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #ff416c, #ff4b2b) border-box;
+        animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    .submit-section {
+        background: linear-gradient(135deg, rgba(86, 171, 47, 0.05), rgba(168, 230, 207, 0.03));
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        text-align: center;
+        margin-top: 3rem;
+        border: 1px solid rgba(86, 171, 47, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .submit-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        transition: left 0.8s;
+    }
+
+    .submit-section:hover::before {
+        left: 100%;
+    }
+
+    button[type="submit"] {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        border: none;
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+        padding: 1rem 2.5rem;
+        border-radius: var(--border-radius);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: var(--shadow-medium);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        min-width: 200px;
+        cursor: pointer;
+    }
+
+    button[type="submit"]:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    button[type="submit"]:not(:disabled):hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(86, 171, 47, 0.4);
+        color: white;
+    }
+
+    button[type="submit"]::after {
+        content: '\f090';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        margin-left: 1rem;
+        transition: transform 0.3s ease;
+    }
+
+    button[type="submit"]:not(:disabled):hover::after {
+        transform: translateX(5px);
+    }
+
+    .welcome-text {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .floating-tips {
+        position: fixed;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 280px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+        backdrop-filter: blur(15px);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-medium);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        z-index: 1000;
+    }
+
+    .tip-title {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tip-title::before {
+        content: '\f0eb';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        color: #f59e0b;
+    }
+
+    .tip-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .tip-list li {
+        margin-bottom: 0.75rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.4;
+        position: relative;
+        padding-left: 1.5rem;
+    }
+
+    .tip-list li::before {
+        content: '\f058';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        color: #10b981;
+        font-size: 0.8rem;
+    }
+
+    .login-redirect {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .login-redirect p {
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .login-redirect a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .login-redirect a:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+
+    @media (max-width: 1200px) {
+        .floating-tips {
+            display: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .login-title {
+            font-size: 2rem;
+        }
+        
+        .form-container {
+            padding: 2rem 1.5rem;
+            margin: 0 1rem;
+        }
+        
+        .login-hero {
+            margin: 0 1rem 2rem 1rem;
+            padding: 1.5rem;
+        }
+        
+        button[type="submit"] {
+            width: 100%;
+            padding: 1rem;
+        }
+    }
+</style>
+
+<div class="login-hero">
+    <h1 class="login-title">
+        <i class="fas fa-sign-in-alt me-3"></i>Welcome Back
+    </h1>
+    <p class="welcome-text">
+        Sign in to access your dashboard and continue your journey
+    </p>
+</div>
+
+<div class="form-container">
+    {% if form.non_field_errors %}
+        <div class="error" style="margin-bottom: 2rem; padding: 1rem; background: rgba(255, 65, 108, 0.1); border-radius: var(--border-radius); border-left: 4px solid #ff416c;">
+            <i class="fas fa-exclamation-triangle me-2"></i>{{ form.non_field_errors }}
+        </div>
+    {% endif %}
     
-    <!-- Username Field -->
-    <div class="field">
-      <label for="{{ form.username.id_for_label }}">Username:</label>
-      <input 
-        type="text" 
-        id="{{ form.username.id_for_label }}"
-        name="{{ form.username.name }}"
-        value="{{ form.username.value|default:'' }}"
-        required
-        autocomplete="username"
-      >
-      {% if form.username.errors %}
-        <div class="error">
-          {{ form.username.errors|first }}
+    <form method="post" id="loginForm" novalidate>
+        {% csrf_token %}
+        
+        <!-- Username Field -->
+        <div class="field">
+            <label for="{{ form.username.id_for_label }}">
+                <i class="fas fa-user"></i>
+                Username
+            </label>
+            <input 
+                type="text" 
+                id="{{ form.username.id_for_label }}"
+                name="{{ form.username.name }}"
+                value="{{ form.username.value|default:'' }}"
+                placeholder="Enter your username"
+                required
+                autocomplete="username"
+            >
+            {% if form.username.errors %}
+                <div class="error">
+                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.username.errors|first }}
+                </div>
+            {% endif %}
+            <div class="error" id="username-error"></div>
         </div>
-      {% endif %}
-      <div class="error" id="username-error"></div>
-    </div>
 
-    <!-- Password Field -->
-    <div class="field">
-      <label for="{{ form.password.id_for_label }}">Password:</label>
-      <input 
-        type="password" 
-        id="{{ form.password.id_for_label }}"
-        name="{{ form.password.name }}"
-        required
-        autocomplete="current-password"
-      >
-      {% if form.password.errors %}
-        <div class="error">
-          {{ form.password.errors|first }}
+        <!-- Password Field -->
+        <div class="field">
+            <label for="{{ form.password.id_for_label }}">
+                <i class="fas fa-lock"></i>
+                Password
+            </label>
+            <input 
+                type="password" 
+                id="{{ form.password.id_for_label }}"
+                name="{{ form.password.name }}"
+                placeholder="Enter your password"
+                required
+                autocomplete="current-password"
+            >
+            {% if form.password.errors %}
+                <div class="error">
+                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.password.errors|first }}
+                </div>
+            {% endif %}
+            <div class="error" id="password-error"></div>
         </div>
-      {% endif %}
-      <div class="error" id="password-error"></div>
+
+        <div class="submit-section">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">
+                <i class="fas fa-rocket me-2"></i>Ready to Continue?
+            </h3>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Access your personalized dashboard and explore all features
+            </p>
+            <button type="submit">
+                <i></i>Login
+            </button>
+        </div>
+    </form>
+
+    <div class="login-redirect">
+        <p>Don't have an account yet?</p>
+        <a href="{% url 'signup'%}" class="register-link">
+            <i class="fas fa-user-plus me-1"></i>Create New Account
+        </a>
     </div>
+</div>
 
-    <button type="submit">Login</button>
-  </form>
+<div class="floating-tips">
+    <div class="tip-title">Security Tips</div>
+    <ul class="tip-list">
+        <li>Use a strong, unique password for your account</li>
+        <li>Never share your login credentials with others</li>
+        <li>Log out when using shared computers</li>
+        <li>Contact support if you notice unusual activity</li>
+        <li>Enable two-factor authentication if available</li>
+    </ul>
+</div>
 
-  <script>
+<script>
     document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('loginForm');
-      const username = document.getElementById('{{ form.username.id_for_label }}');
-      const password = document.getElementById('{{ form.password.id_for_label }}');
-      
-      // Clear previous error messages
-      function clearErrors() {
-        document.querySelectorAll('.error').forEach(error => {
-          if (error.id.includes('-error')) {
-            error.textContent = '';
-          }
+        const form = document.getElementById('loginForm');
+        const username = document.getElementById('{{ form.username.id_for_label }}');
+        const password = document.getElementById('{{ form.password.id_for_label }}');
+        
+        // Add entrance animation
+        const formContainer = document.querySelector('.form-container');
+        formContainer.style.opacity = '0';
+        formContainer.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            formContainer.style.transition = 'all 0.6s ease';
+            formContainer.style.opacity = '1';
+            formContainer.style.transform = 'translateY(0)';
+        }, 300);
+
+        // Clear previous error messages
+        function clearErrors() {
+            document.querySelectorAll('.error').forEach(error => {
+                if (error.id.includes('-error')) {
+                    error.textContent = '';
+                }
+            });
+            
+            // Remove invalid styling
+            document.querySelectorAll('.field input').forEach(input => {
+                input.classList.remove('is-invalid');
+            });
+        }
+
+        // Enhanced validation function
+        function validateField(field, errorElementId, fieldName) {
+            const errorElement = document.getElementById(errorElementId);
+            const value = field.value.trim();
+            
+            if (value.length === 0) {
+                field.classList.add('is-invalid');
+                errorElement.innerHTML = `<i class="fas fa-exclamation-circle me-1"></i>${fieldName} is required.`;
+                return false;
+            } else {
+                field.classList.remove('is-invalid');
+                errorElement.textContent = '';
+                return true;
+            }
+        }
+
+        // Username validation
+        username.addEventListener('blur', function() {
+            validateField(this, 'username-error', 'Username');
         });
-      }
 
-      // Username validation
-      username.addEventListener('blur', function() {
-        const usernameError = document.getElementById('username-error');
-        const value = this.value.trim();
-        
-        if (value.length === 0) {
-          usernameError.textContent = 'Username is required.';
-        } else {
-          usernameError.textContent = '';
-        }
-      });
+        // Password validation
+        password.addEventListener('blur', function() {
+            validateField(this, 'password-error', 'Password');
+        });
 
-      // Password validation
-      password.addEventListener('blur', function() {
-        const passwordError = document.getElementById('password-error');
-        const value = this.value;
-        
-        if (value.length === 0) {
-          passwordError.textContent = 'Password is required.';
-        } else {
-          passwordError.textContent = '';
-        }
-      });
+        // Clear errors when user starts typing
+        username.addEventListener('input', function() {
+            if (this.value.length > 0) {
+                this.classList.remove('is-invalid');
+                document.getElementById('username-error').textContent = '';
+            }
+        });
 
-      // Clear errors when user starts typing
-      username.addEventListener('input', function() {
-        if (this.value.length > 0) {
-          document.getElementById('username-error').textContent = '';
-        }
-      });
+        password.addEventListener('input', function() {
+            if (this.value.length > 0) {
+                this.classList.remove('is-invalid');
+                document.getElementById('password-error').textContent = '';
+            }
+        });
 
-      password.addEventListener('input', function() {
-        if (this.value.length > 0) {
-          document.getElementById('password-error').textContent = '';
-        }
-      });
+        // Form submission validation
+        form.addEventListener('submit', function(e) {
+            clearErrors();
+            let hasErrors = false;
 
-      // Form submission validation
-      form.addEventListener('submit', function(e) {
-        clearErrors();
-        let hasErrors = false;
+            // Check username
+            if (!validateField(username, 'username-error', 'Username')) {
+                if (!hasErrors) {
+                    username.focus();
+                }
+                hasErrors = true;
+            }
 
-        // Check username
-        if (username.value.trim().length === 0) {
-          document.getElementById('username-error').textContent = 'Username is required.';
-          username.focus();
-          hasErrors = true;
-        }
+            // Check password
+            if (!validateField(password, 'password-error', 'Password')) {
+                if (!hasErrors) {
+                    password.focus();
+                }
+                hasErrors = true;
+            }
 
-        // Check password
-        if (password.value.length === 0) {
-          document.getElementById('password-error').textContent = 'Password is required.';
-          if (!hasErrors) {
-            password.focus();
-          }
-          hasErrors = true;
-        }
+            if (hasErrors) {
+                e.preventDefault();
+                return false;
+            }
 
-        if (hasErrors) {
-          e.preventDefault();
-          return false;
-        }
-      });
+            // Handle form submission feedback
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
+            
+            // Re-enable button after a delay in case of validation errors
+            setTimeout(function() {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Login';
+            }, 3000);
+        });
 
-      // Handle form submission feedback
-      form.addEventListener('submit', function() {
-        const submitButton = this.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.textContent = 'Logging in...';
-        
-        // Re-enable button after a delay in case of validation errors
-        setTimeout(function() {
-          submitButton.disabled = false;
-          submitButton.textContent = 'Login';
-        }, 3000);
-      });
+        // Add focus effects for better UX
+        const inputs = form.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentNode.style.transform = 'scale(1.02)';
+                this.parentNode.style.transition = 'transform 0.2s ease';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentNode.style.transform = 'scale(1)';
+            });
+        });
     });
-  </script>
+</script>
 {% endblock %}

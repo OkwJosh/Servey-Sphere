@@ -1,11 +1,657 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-4">
-  <h2>Create Survey</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Next: Add Questions</button>
-  </form>
+<style>
+    /* Inherit font system and design variables from base template */
+    .survey-create-hero {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        margin-bottom: 3rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .survey-create-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
+        animation: heroFloat 20s ease-in-out infinite;
+    }
+
+    @keyframes heroFloat {
+        0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+        50% { transform: translate(-50%, -50%) rotate(5deg); }
+    }
+
+    @keyframes gradientFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .create-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .progress-steps {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 2rem 0;
+        padding: 1rem;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: var(--border-radius);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: var(--shadow-light);
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--primary-gradient);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin-right: 1rem;
+        box-shadow: var(--shadow-light);
+    }
+
+    .step-inactive .step-number {
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
+        color: #64748b;
+    }
+
+    .step-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-right: 2rem;
+    }
+
+    .step-inactive .step-label {
+        color: var(--text-secondary);
+    }
+
+    .step-connector {
+        width: 60px;
+        height: 2px;
+        background: var(--primary-gradient);
+        margin-right: 2rem;
+        border-radius: 1px;
+    }
+
+    .step-inactive + .step .step-connector,
+    .step-inactive .step-connector {
+        background: #e2e8f0;
+    }
+
+    .form-container {
+        background: var(--glass-bg);
+        backdrop-filter: blur(15px);
+        border-radius: var(--border-radius-lg);
+        padding: 3rem;
+        box-shadow: var(--shadow-strong);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--primary-gradient);
+        background-size: 300% 100%;
+        animation: gradientFlow 4s ease infinite;
+    }
+
+    .form-group {
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--primary-gradient);
+        display: inline-block;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid transparent;
+        border-radius: var(--border-radius);
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #e2e8f0, #f1f5f9) border-box;
+        transition: all 0.3s ease;
+        width: 100%;
+        position: relative;
+    }
+
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        background: linear-gradient(white, white) padding-box,
+                    var(--primary-gradient) border-box;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .form-control::placeholder {
+        color: #94a3b8;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus::placeholder {
+        opacity: 0.7;
+        transform: translateY(-2px);
+    }
+
+    textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .help-text {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+    }
+
+    .form-group:focus-within .help-text,
+    .form-group:hover .help-text {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .submit-section {
+        background: var(--success-gradient);
+        background: linear-gradient(135deg, rgba(86, 171, 47, 0.05), rgba(168, 230, 207, 0.03));
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        text-align: center;
+        margin-top: 3rem;
+        border: 1px solid rgba(86, 171, 47, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .submit-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        transition: left 0.8s;
+    }
+
+    .submit-section:hover::before {
+        left: 100%;
+    }
+
+    .next-btn {
+        background: var(--success-gradient);
+        border: none;
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+        padding: 1rem 2.5rem;
+        border-radius: var(--border-radius);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: var(--shadow-medium);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        min-width: 200px;
+        cursor: pointer;
+    }
+
+    .next-btn::after {
+        content: '\f061';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        margin-left: 1rem;
+        transition: transform 0.3s ease;
+    }
+
+    .next-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(86, 171, 47, 0.4);
+        color: white;
+    }
+
+    .next-btn:hover::after {
+        transform: translateX(5px);
+    }
+
+    .floating-tips {
+        position: fixed;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 280px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(15px);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-medium);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        z-index: 1000;
+    }
+
+    .tip-title {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tip-title::before {
+        content: '\f0eb';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        color: #f59e0b;
+    }
+
+    .tip-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .tip-list li {
+        margin-bottom: 0.75rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.4;
+        position: relative;
+        padding-left: 1.5rem;
+    }
+
+    .tip-list li::before {
+        content: '\f058';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        color: #10b981;
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 1200px) {
+        .floating-tips {
+            display: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .create-title {
+            font-size: 2rem;
+        }
+        
+        .progress-steps {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .step {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .step-connector {
+            display: none;
+        }
+        
+        .form-container {
+            padding: 2rem 1.5rem;
+        }
+        
+        .next-btn {
+            width: 100%;
+            padding: 1rem;
+        }
+    }
+
+    /* Form validation styles */
+    .form-control.is-invalid {
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #ff416c, #ff4b2b) border-box;
+        animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    .invalid-feedback {
+        color: #ff416c;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: block;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Character counter */
+    .character-counter {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+        text-align: right;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .character-counter.warning {
+        color: #f59e0b;
+    }
+
+    .character-counter.danger {
+        color: #ff416c;
+    }
+</style>
+
+<div class="survey-create-hero">
+    <h1 class="create-title">
+        <i class="fas fa-magic me-3"></i>Create Survey
+    </h1>
+    <p style="font-size: 1.2rem; color: var(--text-secondary); margin: 0;">
+        Let's bring your ideas to life with a beautiful survey
+    </p>
 </div>
+
+<div class="progress-steps">
+    <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-label">Survey Details</div>
+        <div class="step-connector"></div>
+    </div>
+    <div class="step step-inactive">
+        <div class="step-number">2</div>
+        <div class="step-label">Add Questions</div>
+    </div>
+</div>
+
+<div class="form-container">
+    <form method="post" id="surveyForm">
+        {% csrf_token %}
+        
+        <!-- Custom form rendering -->
+        <div class="form-group">
+            <label class="form-label" for="{{ form.title.id_for_label }}">
+                <i class="fas fa-heading"></i>
+                Survey Title
+            </label>
+            <input type="text" 
+                   class="form-control" 
+                   name="{{ form.title.name }}" 
+                   id="{{ form.title.id_for_label }}"
+                   value="{{ form.title.value|default:'' }}"
+                   placeholder="Enter an engaging title for your survey"
+                   required>
+            <div class="help-text">
+                <i class="fas fa-lightbulb me-1"></i>
+                Choose a clear, descriptive title that tells people what your survey is about
+            </div>
+            <div class="character-counter" id="titleCounter">0/100 characters</div>
+            {% if form.title.errors %}
+                <div class="invalid-feedback">{{ form.title.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="{{ form.description.id_for_label }}">
+                <i class="fas fa-align-left"></i>
+                Description
+            </label>
+            <textarea class="form-control" 
+                      name="{{ form.description.name }}" 
+                      id="{{ form.description.id_for_label }}"
+                      placeholder="Describe the purpose of your survey and what participants can expect"
+                      rows="4">{{ form.description.value|default:'' }}</textarea>
+            <div class="help-text">
+                <i class="fas fa-info-circle me-1"></i>
+                Explain why you're conducting this survey and how the data will be used
+            </div>
+            {% if form.description.errors %}
+                <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Render any additional form fields -->
+        {% for field in form %}
+            {% if field.name != 'title' and field.name != 'description' %}
+            <div class="form-group">
+                <label class="form-label" for="{{ field.id_for_label }}">
+                    <i class="fas fa-cog"></i>
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                    <div class="help-text">
+                        <i class="fas fa-question-circle me-1"></i>
+                        {{ field.help_text }}
+                    </div>
+                {% endif %}
+                {% if field.errors %}
+                    <div class="invalid-feedback">{{ field.errors.0 }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="submit-section">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">
+                <i class="fas fa-rocket me-2"></i>Ready for the Next Step?
+            </h3>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Once you continue, you'll be able to add questions to make your survey interactive
+            </p>
+            <button type="submit" class="next-btn">
+                <i class="fas fa-forward me-2"></i>Next: Add Questions
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="floating-tips">
+    <div class="tip-title">Quick Tips</div>
+    <ul class="tip-list">
+        <li>Keep your title under 60 characters for better readability</li>
+        <li>Write a compelling description to increase participation</li>
+        <li>Be clear about how long the survey will take</li>
+        <li>Mention if responses are anonymous</li>
+        <li>Consider your target audience when writing</li>
+    </ul>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('surveyForm');
+        const inputs = form.querySelectorAll('.form-control');
+        const titleInput = form.querySelector('input[name="title"]');
+        const titleCounter = document.getElementById('titleCounter');
+        
+        // Add entrance animation
+        const formContainer = document.querySelector('.form-container');
+        formContainer.style.opacity = '0';
+        formContainer.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            formContainer.style.transition = 'all 0.6s ease';
+            formContainer.style.opacity = '1';
+            formContainer.style.transform = 'translateY(0)';
+        }, 300);
+        
+        // Character counter for title
+        function updateTitleCounter() {
+            const length = titleInput.value.length;
+            const maxLength = 100;
+            titleCounter.textContent = `${length}/${maxLength} characters`;
+            
+            titleCounter.className = 'character-counter';
+            if (length > maxLength * 0.8) {
+                titleCounter.classList.add('warning');
+            }
+            if (length > maxLength) {
+                titleCounter.classList.add('danger');
+            }
+        }
+        
+        if (titleInput) {
+            titleInput.addEventListener('input', updateTitleCounter);
+            updateTitleCounter();
+        }
+        
+        // Enhanced form validation
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                validateField(this);
+            });
+            
+            input.addEventListener('input', function() {
+                if (this.classList.contains('is-invalid')) {
+                    validateField(this);
+                }
+            });
+        });
+        
+        function validateField(field) {
+            const value = field.value.trim();
+            const isRequired = field.hasAttribute('required');
+            
+            if (isRequired && !value) {
+                field.classList.add('is-invalid');
+                showError(field, 'This field is required');
+            } else if (field.name === 'title' && value.length > 100) {
+                field.classList.add('is-invalid');
+                showError(field, 'Title should be under 100 characters');
+            } else {
+                field.classList.remove('is-invalid');
+                hideError(field);
+            }
+        }
+        
+        function showError(field, message) {
+            let errorDiv = field.parentNode.querySelector('.invalid-feedback');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                field.parentNode.appendChild(errorDiv);
+            }
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle me-1"></i>${message}`;
+        }
+        
+        function hideError(field) {
+            const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+            if (errorDiv && !field.classList.contains('is-invalid')) {
+                errorDiv.remove();
+            }
+        }
+        
+        // Form submission with loading state
+        form.addEventListener('submit', function(e) {
+            const submitBtn = form.querySelector('.next-btn');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+            submitBtn.disabled = true;
+            
+            // Validate all fields before submission
+            let hasErrors = false;
+            inputs.forEach(input => {
+                validateField(input);
+                if (input.classList.contains('is-invalid')) {
+                    hasErrors = true;
+                }
+            });
+            
+            if (hasErrors) {
+                e.preventDefault();
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                
+                // Scroll to first error
+                const firstError = form.querySelector('.is-invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+            }
+        });
+        
+        // Add focus effects for better UX
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentNode.style.transform = 'scale(1.01)';
+                this.parentNode.style.transition = 'transform 0.2s ease';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentNode.style.transform = 'scale(1)';
+            });
+        });
+    });
+</script>
 {% endblock %}

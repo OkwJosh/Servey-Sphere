@@ -1,225 +1,805 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Sign Up</h2>
-  
-  {% if form.non_field_errors %}
-    <div class="error">
-      {{ form.non_field_errors }}
-    </div>
-  {% endif %}
-  
-  <form method="post" id="signupForm" novalidate>
-    {% csrf_token %}
+<style>
+    .signup-hero {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        margin-bottom: 3rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .signup-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
+        animation: heroFloat 20s ease-in-out infinite;
+    }
+
+    @keyframes heroFloat {
+        0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+        50% { transform: translate(-50%, -50%) rotate(5deg); }
+    }
+
+    @keyframes gradientFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .signup-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .form-container {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+        backdrop-filter: blur(15px);
+        border-radius: var(--border-radius-lg);
+        padding: 3rem;
+        box-shadow: var(--shadow-strong);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .form-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #4facfe);
+        background-size: 300% 100%;
+        animation: gradientFlow 4s ease infinite;
+    }
+
+    .form-grid {
+        display: grid;
+        gap: 2rem;
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .field {
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .field.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .field label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .field label::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: inline-block;
+    }
+
+    .field input {
+        border: 2px solid transparent;
+        border-radius: var(--border-radius);
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #e2e8f0, #f1f5f9) border-box;
+        transition: all 0.3s ease;
+        width: 100%;
+        position: relative;
+    }
+
+    .field input:focus {
+        outline: none;
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #667eea, #764ba2) border-box;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .field input::placeholder {
+        color: #94a3b8;
+        transition: all 0.3s ease;
+    }
+
+    .field input:focus::placeholder {
+        opacity: 0.7;
+        transform: translateY(-2px);
+    }
+
+    .error {
+        color: #ff416c;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: block;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .field input.is-invalid {
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #ff416c, #ff4b2b) border-box;
+        animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    .password-strength {
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        border-radius: var(--border-radius);
+        background: rgba(102, 126, 234, 0.05);
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        font-size: 0.875rem;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+    }
+
+    .password-strength.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .password-requirements {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0 0;
+    }
+
+    .password-requirements li {
+        padding: 0.25rem 0;
+        position: relative;
+        padding-left: 1.5rem;
+        color: #64748b;
+        font-size: 0.8rem;
+        transition: color 0.3s ease;
+    }
+
+    .password-requirements li::before {
+        content: '\f00d';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        color: #ff416c;
+        transition: all 0.3s ease;
+    }
+
+    .password-requirements li.valid::before {
+        content: '\f00c';
+        color: #10b981;
+    }
+
+    .password-requirements li.valid {
+        color: #10b981;
+    }
+
+    .submit-section {
+        background: linear-gradient(135deg, rgba(86, 171, 47, 0.05), rgba(168, 230, 207, 0.03));
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        text-align: center;
+        margin-top: 3rem;
+        border: 1px solid rgba(86, 171, 47, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .submit-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        transition: left 0.8s;
+    }
+
+    .submit-section:hover::before {
+        left: 100%;
+    }
+
+    button[type="submit"] {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        border: none;
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+        padding: 1rem 2.5rem;
+        border-radius: var(--border-radius);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: var(--shadow-medium);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        min-width: 200px;
+        cursor: pointer;
+    }
+
+    button[type="submit"]:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    button[type="submit"]:not(:disabled):hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(86, 171, 47, 0.4);
+        color: white;
+    }
+
+    {% comment %} button[type="submit"]::after {
+        content: '\f4c1';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        margin-left: 1rem;
+        transition: transform 0.3s ease;
+    } {% endcomment %}
+
+    button[type="submit"]:not(:disabled):hover::after {
+        transform: translateX(5px);
+    }
+
+    .welcome-text {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .floating-tips {
+        position: fixed;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 280px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+        backdrop-filter: blur(15px);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-medium);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        z-index: 1000;
+    }
+
+    .tip-title {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tip-title::before {
+        content: '\f0eb';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        color: #f59e0b;
+    }
+
+    .tip-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .tip-list li {
+        margin-bottom: 0.75rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.4;
+        position: relative;
+        padding-left: 1.5rem;
+    }
+
+    .tip-list li::before {
+        content: '\f058';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        color: #10b981;
+        font-size: 0.8rem;
+    }
+
+    .login-redirect {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .login-redirect p {
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .login-redirect a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .login-redirect a:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+
+    @media (max-width: 1200px) {
+        .floating-tips {
+            display: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .signup-title {
+            font-size: 2rem;
+        }
+        
+        .form-container {
+            padding: 2rem 1.5rem;
+            margin: 0 1rem;
+        }
+        
+        .signup-hero {
+            margin: 0 1rem 2rem 1rem;
+            padding: 1.5rem;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        button[type="submit"] {
+            width: 100%;
+            padding: 1rem;
+        }
+    }
+</style>
+
+<div class="signup-hero">
+    <h1 class="signup-title">
+        <i class="fas fa-user-plus me-3"></i>Join SurveySphere
+    </h1>
+    <p class="welcome-text">
+        Create your account and start building amazing surveys today
+    </p>
+</div>
+
+<div class="form-container">
+    {% if form.non_field_errors %}
+        <div class="error" style="margin-bottom: 2rem; padding: 1rem; background: rgba(255, 65, 108, 0.1); border-radius: var(--border-radius); border-left: 4px solid #ff416c;">
+            <i class="fas fa-exclamation-triangle me-2"></i>{{ form.non_field_errors }}
+        </div>
+    {% endif %}
     
-    <!-- Username Field -->
-    <div class="field">
-      <label for="{{ form.username.id_for_label }}">Username:</label>
-      <input 
-        type="text" 
-        id="{{ form.username.id_for_label }}"
-        name="{{ form.username.name }}"
-        value="{{ form.username.value|default:'' }}"
-        required
-        minlength="3"
-        maxlength="150"
-      >
-      {% if form.username.errors %}
-        <div class="error">
-          {{ form.username.errors|first }}
+    <form method="post" id="signupForm" novalidate>
+        {% csrf_token %}
+        
+        <div class="form-grid">
+            <!-- Username Field -->
+            <div class="field full-width">
+                <label for="{{ form.username.id_for_label }}">
+                    <i class="fas fa-user"></i>
+                    Username
+                </label>
+                <input 
+                    type="text" 
+                    id="{{ form.username.id_for_label }}"
+                    name="{{ form.username.name }}"
+                    value="{{ form.username.value|default:'' }}"
+                    placeholder="Choose a unique username"
+                    required
+                    minlength="3"
+                    maxlength="150"
+                >
+                {% if form.username.errors %}
+                    <div class="error">
+                        <i class="fas fa-exclamation-circle me-1"></i>{{ form.username.errors|first }}
+                    </div>
+                {% endif %}
+                <div class="error" id="username-error"></div>
+            </div>
+
+            <!-- Email and Name Fields Row -->
+            {% if form.email or form.first_name or form.last_name %}
+            <div class="form-row">
+                {% if form.email %}
+                <div class="field {% if not form.first_name and not form.last_name %}full-width{% endif %}">
+                    <label for="{{ form.email.id_for_label }}">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input 
+                        type="email" 
+                        id="{{ form.email.id_for_label }}"
+                        name="{{ form.email.name }}"
+                        value="{{ form.email.value|default:'' }}"
+                        placeholder="your.email@example.com"
+                    >
+                    {% if form.email.errors %}
+                        <div class="error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ form.email.errors|first }}
+                        </div>
+                    {% endif %}
+                    <div class="error" id="email-error"></div>
+                </div>
+                {% endif %}
+
+                {% if form.first_name %}
+                <div class="field">
+                    <label for="{{ form.first_name.id_for_label }}">
+                        <i class="fas fa-id-badge"></i>
+                        First Name
+                    </label>
+                    <input 
+                        type="text" 
+                        id="{{ form.first_name.id_for_label }}"
+                        name="{{ form.first_name.name }}"
+                        value="{{ form.first_name.value|default:'' }}"
+                        placeholder="Your first name"
+                    >
+                    {% if form.first_name.errors %}
+                        <div class="error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ form.first_name.errors|first }}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if form.last_name %}
+                <div class="field">
+                    <label for="{{ form.last_name.id_for_label }}">
+                        <i class="fas fa-id-card"></i>
+                        Last Name
+                    </label>
+                    <input 
+                        type="text" 
+                        id="{{ form.last_name.id_for_label }}"
+                        name="{{ form.last_name.name }}"
+                        value="{{ form.last_name.value|default:'' }}"
+                        placeholder="Your last name"
+                    >
+                    {% if form.last_name.errors %}
+                        <div class="error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ form.last_name.errors|first }}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Password Fields Row -->
+            <div class="form-row">
+                <div class="field">
+                    <label for="{{ form.password1.id_for_label }}">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <input 
+                        type="password" 
+                        id="{{ form.password1.id_for_label }}"
+                        name="{{ form.password1.name }}"
+                        placeholder="Create a strong password"
+                        required
+                        minlength="8"
+                    >
+                    {% if form.password1.errors %}
+                        <div class="error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ form.password1.errors|first }}
+                        </div>
+                    {% endif %}
+                    <div class="error" id="password1-error"></div>
+                    
+                    <div class="password-strength" id="passwordStrength">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                            <i class="fas fa-shield-alt me-1"></i>Password Requirements:
+                        </div>
+                        <ul class="password-requirements">
+                            <li id="length-req">At least 8 characters long</li>
+                            <li id="letter-req">Contains at least one letter</li>
+                            <li id="number-req">Contains at least one number</li>
+                            <li id="similarity-req">Not too similar to username</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="{{ form.password2.id_for_label }}">
+                        <i class="fas fa-lock"></i>
+                        Confirm Password
+                    </label>
+                    <input 
+                        type="password" 
+                        id="{{ form.password2.id_for_label }}"
+                        name="{{ form.password2.name }}"
+                        placeholder="Confirm your password"
+                        required
+                        minlength="8"
+                    >
+                    {% if form.password2.errors %}
+                        <div class="error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ form.password2.errors|first }}
+                        </div>
+                    {% endif %}
+                    <div class="error" id="password2-error"></div>
+                </div>
+            </div>
         </div>
-      {% endif %}
-      <div class="error" id="username-error"></div>
-    </div>
 
-    <!-- Email Field (if present) -->
-    {% if form.email %}
-    <div class="field">
-      <label for="{{ form.email.id_for_label }}">Email:</label>
-      <input 
-        type="email" 
-        id="{{ form.email.id_for_label }}"
-        name="{{ form.email.name }}"
-        value="{{ form.email.value|default:'' }}"
-      >
-      {% if form.email.errors %}
-        <div class="error">
-          {{ form.email.errors|first }}
+        <div class="submit-section">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">
+                <i class="fas fa-rocket me-2"></i>Ready to Get Started?
+            </h3>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Join thousands of users creating beautiful surveys with SurveySphere
+            </p>
+            <button type="submit">
+                <i class="fas fa-user-plus me-2"></i>Create Account
+            </button>
         </div>
-      {% endif %}
-      <div class="error" id="email-error"></div>
+    </form>
+
+    <div class="login-redirect">
+        <p>Already have an account?</p>
+        <a href="{% url 'login' %}" class="login-link">
+            <i class="fas fa-sign-in-alt me-1"></i>Sign in here
+        </a>
     </div>
-    {% endif %}
+</div>
 
-    <!-- First Name Field (if present) -->
-    {% if form.first_name %}
-    <div class="field">
-      <label for="{{ form.first_name.id_for_label }}">First Name:</label>
-      <input 
-        type="text" 
-        id="{{ form.first_name.id_for_label }}"
-        name="{{ form.first_name.name }}"
-        value="{{ form.first_name.value|default:'' }}"
-      >
-      {% if form.first_name.errors %}
-        <div class="error">
-          {{ form.first_name.errors|first }}
-        </div>
-      {% endif %}
-    </div>
-    {% endif %}
+<div class="floating-tips">
+    <div class="tip-title">Account Tips</div>
+    <ul class="tip-list">
+        <li>Choose a memorable but secure username</li>
+        <li>Use a strong password with mixed characters</li>
+        <li>Keep your email address up to date</li>
+        <li>Complete your profile for better experience</li>
+        <li>Your data is always secure with us</li>
+    </ul>
+</div>
 
-    <!-- Last Name Field (if present) -->
-    {% if form.last_name %}
-    <div class="field">
-      <label for="{{ form.last_name.id_for_label }}">Last Name:</label>
-      <input 
-        type="text" 
-        id="{{ form.last_name.id_for_label }}"
-        name="{{ form.last_name.name }}"
-        value="{{ form.last_name.value|default:'' }}"
-      >
-      {% if form.last_name.errors %}
-        <div class="error">
-          {{ form.last_name.errors|first }}
-        </div>
-      {% endif %}
-    </div>
-    {% endif %}
-
-    <!-- Password1 Field -->
-    <div class="field">
-      <label for="{{ form.password1.id_for_label }}">Password:</label>
-      <input 
-        type="password" 
-        id="{{ form.password1.id_for_label }}"
-        name="{{ form.password1.name }}"
-        required
-        minlength="8"
-      >
-      {% if form.password1.errors %}
-        <div class="error">
-          {{ form.password1.errors|first }}
-        </div>
-      {% endif %}
-      <div class="error" id="password1-error"></div>
-    </div>
-
-    <!-- Password2 Field -->
-    <div class="field">
-      <label for="{{ form.password2.id_for_label }}">Confirm Password:</label>
-      <input 
-        type="password" 
-        id="{{ form.password2.id_for_label }}"
-        name="{{ form.password2.name }}"
-        required
-        minlength="8"
-      >
-      {% if form.password2.errors %}
-        <div class="error">
-          {{ form.password2.errors|first }}
-        </div>
-      {% endif %}
-      <div class="error" id="password2-error"></div>
-    </div>
-
-    <button type="submit">Sign Up</button>
-  </form>
-  
-  <p>Already have an account? <a href="{% url 'login' %}">Login here</a>.</p>
-
-  <script>
+<script>
     document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('signupForm');
-      const username = document.getElementById('{{ form.username.id_for_label }}');
-      const password1 = document.getElementById('{{ form.password1.id_for_label }}');
-      const password2 = document.getElementById('{{ form.password2.id_for_label }}');
-      
-      // Clear previous error messages
-      function clearErrors() {
-        document.querySelectorAll('.error').forEach(error => {
-          if (error.id.includes('-error')) {
-            error.textContent = '';
-          }
+        const form = document.getElementById('signupForm');
+        const username = document.getElementById('{{ form.username.id_for_label }}');
+        const password1 = document.getElementById('{{ form.password1.id_for_label }}');
+        const password2 = document.getElementById('{{ form.password2.id_for_label }}');
+        const passwordStrength = document.getElementById('passwordStrength');
+        
+        // Add entrance animation
+        const formContainer = document.querySelector('.form-container');
+        formContainer.style.opacity = '0';
+        formContainer.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            formContainer.style.transition = 'all 0.6s ease';
+            formContainer.style.opacity = '1';
+            formContainer.style.transform = 'translateY(0)';
+        }, 300);
+
+        // Clear previous error messages
+        function clearErrors() {
+            document.querySelectorAll('.error').forEach(error => {
+                if (error.id.includes('-error')) {
+                    error.textContent = '';
+                }
+            });
+            
+            // Remove invalid styling
+            document.querySelectorAll('.field input').forEach(input => {
+                input.classList.remove('is-invalid');
+            });
+        }
+
+        // Enhanced username validation
+        username.addEventListener('blur', function() {
+            const usernameError = document.getElementById('username-error');
+            const value = this.value.trim();
+            
+            if (value.length === 0) {
+                this.classList.add('is-invalid');
+                usernameError.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Username is required.';
+            } else if (value.length < 3) {
+                this.classList.add('is-invalid');
+                usernameError.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Username must be at least 3 characters long.';
+            } else if (value.length > 150) {
+                this.classList.add('is-invalid');
+                usernameError.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Username must be no more than 150 characters.';
+            } else if (!/^[\w.@+-]+$/.test(value)) {
+                this.classList.add('is-invalid');
+                usernameError.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Username may contain only letters, numbers, and @/./+/-/_ characters.';
+            } else {
+                this.classList.remove('is-invalid');
+                usernameError.textContent = '';
+            }
         });
-      }
 
-      // Username validation
-      username.addEventListener('blur', function() {
-        const usernameError = document.getElementById('username-error');
-        const value = this.value.trim();
-        
-        if (value.length < 3) {
-          usernameError.textContent = 'Username must be at least 3 characters long.';
-        } else if (value.length > 150) {
-          usernameError.textContent = 'Username must be no more than 150 characters.';
-        } else if (!/^[\w.@+-]+$/.test(value)) {
-          usernameError.textContent = 'Username may contain only letters, numbers, and @/./+/-/_ characters.';
-        } else {
-          usernameError.textContent = '';
-        }
-      });
+        // Show password strength indicator
+        password1.addEventListener('focus', function() {
+            passwordStrength.classList.add('show');
+        });
 
-      // Password strength validation
-      password1.addEventListener('input', function() {
-        const passwordError = document.getElementById('password1-error');
-        const value = this.value;
-        const errors = [];
+        // Enhanced password strength validation
+        password1.addEventListener('input', function() {
+            const value = this.value;
+            const usernameValue = username.value.toLowerCase();
+            
+            // Update requirements
+            updateRequirement('length-req', value.length >= 8);
+            updateRequirement('letter-req', /[A-Za-z]/.test(value));
+            updateRequirement('number-req', /[0-9]/.test(value));
+            updateRequirement('similarity-req', !value.toLowerCase().includes(usernameValue) || usernameValue.length === 0);
+            
+            // Check for common weak passwords
+            const commonPasswords = ['password', '123456', 'qwerty', 'abc123', 'password123'];
+            const isCommon = commonPasswords.some(common => value.toLowerCase().includes(common));
+            
+            const passwordError = document.getElementById('password1-error');
+            if (value.length > 0 && isCommon) {
+                this.classList.add('is-invalid');
+                passwordError.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>This password is too common. Please choose something more unique.';
+            } else {
+                this.classList.remove('is-invalid');
+                passwordError.textContent = '';
+            }
+        });
 
-        if (value.length < 8) {
-          errors.push('Password must be at least 8 characters long.');
-        }
-        if (!/[A-Za-z]/.test(value)) {
-          errors.push('Password must contain at least one letter.');
-        }
-        if (!/[0-9]/.test(value)) {
-          errors.push('Password must contain at least one number.');
-        }
-        if (value.toLowerCase().includes(username.value.toLowerCase()) && username.value.length > 0) {
-          errors.push('Password cannot be too similar to username.');
-        }
-
-        passwordError.textContent = errors.length > 0 ? errors[0] : '';
-      });
-
-      // Password confirmation validation
-      password2.addEventListener('input', function() {
-        const password2Error = document.getElementById('password2-error');
-        
-        if (this.value !== password1.value) {
-          password2Error.textContent = 'Passwords do not match.';
-        } else {
-          password2Error.textContent = '';
-        }
-      });
-
-      // Form submission validation
-      form.addEventListener('submit', function(e) {
-        clearErrors();
-        let hasErrors = false;
-
-        // Check username
-        if (username.value.trim().length < 3) {
-          document.getElementById('username-error').textContent = 'Username is required and must be at least 3 characters.';
-          hasErrors = true;
+        function updateRequirement(id, isValid) {
+            const element = document.getElementById(id);
+            if (isValid) {
+                element.classList.add('valid');
+            } else {
+                element.classList.remove('valid');
+            }
         }
 
-        // Check password1
-        if (password1.value.length < 8) {
-          document.getElementById('password1-error').textContent = 'Password must be at least 8 characters long.';
-          hasErrors = true;
-        }
+        // Password confirmation validation
+        password2.addEventListener('input', function() {
+            const password2Error = document.getElementById('password2-error');
+            
+            if (this.value.length > 0 && this.value !== password1.value) {
+                this.classList.add('is-invalid');
+                password2Error.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Passwords do not match.';
+            } else {
+                this.classList.remove('is-invalid');
+                password2Error.textContent = '';
+            }
+        });
 
-        // Check password2
-        if (password1.value !== password2.value) {
-          document.getElementById('password2-error').textContent = 'Passwords do not match.';
-          hasErrors = true;
-        }
+        // Clear errors when user starts typing
+        const inputs = form.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.value.length > 0 && this.classList.contains('is-invalid')) {
+                    this.classList.remove('is-invalid');
+                    const errorId = this.id.replace(/^id_/, '') + '-error';
+                    const errorElement = document.getElementById(errorId);
+                    if (errorElement) {
+                        errorElement.textContent = '';
+                    }
+                }
+            });
+        });
 
-        if (hasErrors) {
-          e.preventDefault();
-          return false;
-        }
-      });
+        // Enhanced form submission validation
+        form.addEventListener('submit', function(e) {
+            clearErrors();
+            let hasErrors = false;
+            let firstErrorField = null;
+
+            // Check username
+            if (username.value.trim().length < 3) {
+                username.classList.add('is-invalid');
+                document.getElementById('username-error').innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Username is required and must be at least 3 characters.';
+                hasErrors = true;
+                firstErrorField = firstErrorField || username;
+            }
+
+            // Check password1
+            if (password1.value.length < 8) {
+                password1.classList.add('is-invalid');
+                document.getElementById('password1-error').innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Password must be at least 8 characters long.';
+                hasErrors = true;
+                firstErrorField = firstErrorField || password1;
+            }
+
+            // Check password match
+            if (password1.value !== password2.value) {
+                password2.classList.add('is-invalid');
+                document.getElementById('password2-error').innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Passwords do not match.';
+                hasErrors = true;
+                firstErrorField = firstErrorField || password2;
+            }
+
+            if (hasErrors) {
+                e.preventDefault();
+                if (firstErrorField) {
+                    firstErrorField.focus();
+                    firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return false;
+            }
+
+            // Handle form submission feedback
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+            
+            // Re-enable button after a delay in case of validation errors
+            setTimeout(function() {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Account';
+            }, 5000);
+        });
+
+        // Add focus effects for better UX
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentNode.style.transform = 'scale(1.02)';
+                this.parentNode.style.transition = 'transform 0.2s ease';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentNode.style.transform = 'scale(1)';
+                // Hide password strength if password is empty
+                if (this === password1 && this.value.length === 0) {
+                    passwordStrength.classList.remove('show');
+                }
+            });
+        });
     });
-  </script>
+</script>
 {% endblock %}

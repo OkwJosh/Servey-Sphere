@@ -10,7 +10,7 @@ from django.views.generic import TemplateView
 
 class SignUpView(generic.CreateView):
     form_class = CustomUserCreationForm
-    success_url = reverse_lazy("login")  # You can change this to "dashboard" if you want
+    success_url = reverse_lazy("dashboard")  # You can change this to "dashboard" if you want
     template_name = "signup.html"
     
     def dispatch(self, request, *args, **kwargs):
@@ -36,7 +36,7 @@ class SignUpView(generic.CreateView):
         # Uncomment the lines below if you want to auto-login
         login(self.request, user)
         messages.success(self.request, f'Welcome, {user.username}!')
-        return redirect('survey:dashboard')
+        return redirect('dashboard')
         
         return response
     

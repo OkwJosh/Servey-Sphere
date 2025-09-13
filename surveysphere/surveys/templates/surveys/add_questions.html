@@ -1,16 +1,791 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-4">
-  <h2>Add Questions for "{{ survey.title }}"</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ formset.management_form }}
-    {% for form in formset %}
-      <div class="card mb-3 p-3">
-        {{ form.as_p }}
-      </div>
-    {% endfor %}
-    <button type="submit" class="btn btn-primary">Save Questions</button>
-  </form>
+<style>
+    .questions-hero {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        margin-bottom: 3rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .questions-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(118, 75, 162, 0.05) 0%, transparent 70%);
+        animation: heroFloat 25s ease-in-out infinite;
+    }
+
+    .questions-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .survey-name {
+        color: #f093fb;
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(240, 147, 251, 0.3);
+    }
+
+    .progress-steps {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 2rem 0;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+        backdrop-filter: blur(10px);
+        border-radius: var(--border-radius);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin-right: 1rem;
+        box-shadow: var(--shadow-light);
+        transition: all 0.3s ease;
+    }
+
+    .step-active .step-number {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .step-completed .step-number {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        color: white;
+    }
+
+    .step-inactive .step-number {
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
+        color: #64748b;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); box-shadow: var(--shadow-light); }
+        50% { transform: scale(1.05); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); }
+    }
+
+    .step-label {
+        font-weight: 600;
+        margin-right: 2rem;
+        transition: color 0.3s ease;
+    }
+
+    .step-active .step-label {
+        color: var(--text-primary);
+    }
+
+    .step-completed .step-label {
+        color: #56ab2f;
+    }
+
+    .step-inactive .step-label {
+        color: var(--text-secondary);
+    }
+
+    .step-connector {
+        width: 60px;
+        height: 2px;
+        margin-right: 2rem;
+        border-radius: 1px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .step-completed + .step .step-connector,
+    .step-completed .step-connector {
+        background: linear-gradient(90deg, #56ab2f, #a8e6cf);
+    }
+
+    .step-active .step-connector {
+        background: #e2e8f0;
+    }
+
+    .step-active .step-connector::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        animation: fillConnector 2s ease-in-out infinite;
+    }
+
+    @keyframes fillConnector {
+        0% { left: -100%; }
+        50% { left: 0; }
+        100% { left: 100%; }
+    }
+
+    .step-inactive .step-connector {
+        background: #e2e8f0;
+    }
+
+    .main-content {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 3rem;
+        margin-top: 2rem;
+    }
+
+    .form-section {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+        backdrop-filter: blur(15px);
+        border-radius: var(--border-radius-lg);
+        padding: 2.5rem;
+        box-shadow: var(--shadow-strong);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+        height: fit-content;
+    }
+
+    .form-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #4facfe);
+        background-size: 300% 100%;
+        animation: gradientFlow 4s ease infinite;
+    }
+
+    .questions-list-section {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+        backdrop-filter: blur(15px);
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        box-shadow: var(--shadow-strong);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+        height: fit-content;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .section-title::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .form-group {
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid transparent;
+        border-radius: var(--border-radius);
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #e2e8f0, #f1f5f9) border-box;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #667eea, #764ba2) border-box;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .options-container {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.02));
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-top: 1rem;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.5s ease;
+    }
+
+    .options-container.show {
+        opacity: 1;
+        max-height: 500px;
+        margin-bottom: 1rem;
+    }
+
+    .option-input {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .option-input input {
+        flex: 1;
+        border-radius: var(--border-radius-sm);
+        padding: 0.75rem 1rem;
+    }
+
+    .remove-option {
+        background: linear-gradient(135deg, #ff416c, #ff4b2b);
+        border: none;
+        color: white;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .remove-option:hover {
+        transform: scale(1.1) rotate(90deg);
+        box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3);
+    }
+
+    .add-option-btn {
+        background: linear-gradient(135deg, #4facfe, #00f2fe);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .add-option-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(79, 172, 254, 0.3);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .save-question-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: 1rem 2rem;
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        flex: 1;
+    }
+
+    .save-question-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+
+    .done-btn {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        border: none;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: 1rem 2rem;
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .done-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(86, 171, 47, 0.3);
+        color: white;
+    }
+
+    .question-item {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: var(--shadow-light);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .question-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .question-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .question-text {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .question-type {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1rem;
+    }
+
+    .question-options {
+        margin-left: 1rem;
+    }
+
+    .question-options li {
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+        position: relative;
+        padding-left: 1rem;
+    }
+
+    .question-options li::before {
+        content: '\f111';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 400;
+        position: absolute;
+        left: 0;
+        color: #667eea;
+        font-size: 0.5rem;
+        top: 0.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #667eea;
+        margin-bottom: 1rem;
+        opacity: 0.7;
+    }
+
+    @media (max-width: 1024px) {
+        .main-content {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        
+        .questions-list-section {
+            order: 2;
+        }
+        
+        .form-section {
+            order: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .questions-title {
+            font-size: 1.8rem;
+        }
+        
+        .progress-steps {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .step {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .step-connector {
+            display: none;
+        }
+        
+        .form-section, .questions-list-section {
+            padding: 1.5rem;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="questions-hero">
+    <h1 class="questions-title">
+        <i class="fas fa-question-circle me-3"></i>Add Questions
+    </h1>
+    <p style="font-size: 1.2rem; color: var(--text-secondary); margin: 0;">
+        Building questions for <span class="survey-name">"{{ survey.title }}"</span>
+    </p>
 </div>
+
+<div class="progress-steps">
+    <div class="step step-completed">
+        <div class="step-number"><i class="fas fa-check"></i></div>
+        <div class="step-label">Survey Details</div>
+        <div class="step-connector"></div>
+    </div>
+    <div class="step step-active">
+        <div class="step-number">2</div>
+        <div class="step-label">Add Questions</div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="form-section">
+        <h2 class="section-title">
+            <i class="fas fa-edit"></i>
+            Create Question
+        </h2>
+        
+       <form method="post" action="{% url 'surveys:add_questions' survey.id %}" id="questionForm">
+    {% csrf_token %}
+
+    <!-- Global non-field errors -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+    <div class="form-group">
+        <label class="form-label" for="{{ form.text.id_for_label }}">
+            <i class="fas fa-comment-alt"></i>
+            Question Text
+        </label>
+        {{ form.text }}
+        {% if form.text.errors %}
+            <div class="text-danger">
+                {{ form.text.errors|striptags }}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="{{ form.question_type.id_for_label }}">
+            <i class="fas fa-list"></i>
+            Question Type
+        </label>
+        {{ form.question_type }}
+        {% if form.question_type.errors %}
+            <div class="text-danger">
+                {{ form.question_type.errors|striptags }}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Render other fields with error display -->
+    {% for field in form %}
+        {% if field.name != 'text' and field.name != 'question_type' %}
+        <div class="form-group">
+            <label class="form-label" for="{{ field.id_for_label }}">
+                <i class="fas fa-cog"></i>
+                {{ field.label }}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+                <div class="text-danger">
+                    {{ field.errors|striptags }}
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endfor %}
+
+    <div id="options-container" class="options-container">
+        <label class="form-label">
+            <i class="fas fa-list-ul"></i>
+            Answer Options
+        </label>
+        <div id="option-list">
+            <div class="option-input">
+                <input type="text" name="options[]" placeholder="Enter first option" required>
+                <button type="button" class="remove-option" onclick="removeOption(this)" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <button type="button" class="add-option-btn" onclick="addOption()">
+            <i class="fas fa-plus"></i>
+            Add Another Option
+        </button>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn save-question-btn">
+            <i class="fas fa-save me-2"></i>Save Question
+        </button>
+    </div>
+</form>
+
+
+<!-- Done button -->
+<form method="get" action="{% url 'surveys:create_success' %}" style="margin-top: 1rem;">
+    <button type="submit" class="btn done-btn w-100">
+        <i class="fas fa-check-circle me-2"></i>Finish Survey
+    </button>
+</form>
+    </div>
+
+    <div class="questions-list-section">
+        <h3 class="section-title">
+            <i class="fas fa-clipboard-list"></i>
+            Existing Questions
+        </h3>
+        
+        {% if questions %}
+            <div class="questions-list">
+                {% for question in questions %}
+                <div class="question-item">
+                    <div class="question-text">{{ question.text }}</div>
+                    <div class="question-type">{{ question.get_question_type_display }}</div>
+                    {% if question.options.exists %}
+                        <ul class="question-options">
+                            {% for option in question.options.all %}
+                                <li>{{ option.text }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard-question"></i>
+                <h4>No questions yet</h4>
+                <p>Start building your survey by adding your first question above.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const typeField = document.querySelector("#{{ form.question_type.id_for_label }}");
+        const optionsContainer = document.getElementById("options-container");
+        const form = document.getElementById('questionForm');
+        
+        // Add entrance animation
+        const sections = document.querySelectorAll('.form-section, .questions-list-section');
+        sections.forEach((section, index) => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(30px)';
+            
+            setTimeout(() => {
+                section.style.transition = 'all 0.6s ease';
+                section.style.opacity = '1';
+                section.style.transform = 'translateY(0)';
+            }, 300 + (index * 200));
+        });
+        
+        function toggleOptions() {
+            if (typeField.value === "radio" || typeField.value === "checkbox") {
+                optionsContainer.classList.add('show');
+                // Make first option required
+                const firstOption = optionsContainer.querySelector('input[name="options[]"]');
+                if (firstOption) {
+                    firstOption.required = true;
+                }
+            } else {
+                optionsContainer.classList.remove('show');
+                // Remove required from options
+                const optionInputs = optionsContainer.querySelectorAll('input[name="options[]"]');
+                optionInputs.forEach(input => {
+                    input.required = false;
+                });
+            }
+        }
+
+        typeField.addEventListener("change", toggleOptions);
+        toggleOptions();
+
+        // Enhanced form validation
+        form.addEventListener('submit', function(e) {
+            const submitBtn = form.querySelector('.save-question-btn');
+            const originalText = submitBtn.innerHTML;
+            
+            // Validate options if needed
+            if (typeField.value === "radio" || typeField.value === "checkbox") {
+                const optionInputs = optionsContainer.querySelectorAll('input[name="options[]"]');
+                const filledOptions = Array.from(optionInputs).filter(input => input.value.trim());
+                
+                if (filledOptions.length < 2) {
+                    e.preventDefault();
+                    alert('Please add at least 2 options for this question type.');
+                    return;
+                }
+            }
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+            submitBtn.disabled = true;
+        });
+    });
+
+    // Add more options dynamically
+    function addOption() {
+        const optionList = document.getElementById("option-list");
+        const optionInputs = optionList.querySelectorAll('.option-input');
+        const optionNumber = optionInputs.length + 1;
+        
+        const optionDiv = document.createElement("div");
+        optionDiv.className = "option-input";
+        
+        optionDiv.innerHTML = `
+            <input type="text" name="options[]" placeholder="Enter option ${optionNumber}" required>
+            <button type="button" class="remove-option" onclick="removeOption(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        optionList.appendChild(optionDiv);
+        
+        // Show remove buttons if more than 1 option
+        updateRemoveButtons();
+        
+        // Focus on the new input
+        const newInput = optionDiv.querySelector('input');
+        newInput.focus();
+    }
+
+    function removeOption(button) {
+        const optionDiv = button.parentElement;
+        optionDiv.style.animation = 'slideOut 0.3s ease';
+        
+        setTimeout(() => {
+            optionDiv.remove();
+            updateRemoveButtons();
+            updateOptionPlaceholders();
+        }, 300);
+    }
+
+    function updateRemoveButtons() {
+        const optionInputs = document.querySelectorAll('#option-list .option-input');
+        const removeButtons = document.querySelectorAll('#option-list .remove-option');
+        
+        removeButtons.forEach((button, index) => {
+            if (optionInputs.length > 1) {
+                button.style.display = 'flex';
+            } else {
+                button.style.display = 'none';
+            }
+        });
+    }
+
+    function updateOptionPlaceholders() {
+        const optionInputs = document.querySelectorAll('#option-list input[name="options[]"]');
+        optionInputs.forEach((input, index) => {
+            input.placeholder = `Enter option ${index + 1}`;
+        });
+    }
+
+    // Add slide out animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+                max-height: 60px;
+                margin-bottom: 1rem;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+                max-height: 0;
+                margin-bottom: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
 {% endblock %}
