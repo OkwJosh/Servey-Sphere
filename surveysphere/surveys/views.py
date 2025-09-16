@@ -3,7 +3,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db import transaction
-from django.core.exceptions import ValidationError  # ✅ Added
+from django.core.exceptions import ValidationError
+from django.conf import settings
+import logging 
 from .models import Survey, Question, Response, Answer, Option
 from .forms import (
     SurveyResponseForm,
@@ -11,6 +13,10 @@ from .forms import (
     QuestionCreationForm,
     OptionCreationForm
 )
+
+
+logging.warning(f"🚀 ALLOWED_HOSTS = {settings.ALLOWED_HOSTS}")
+
 
 
 def survey_list(request):
