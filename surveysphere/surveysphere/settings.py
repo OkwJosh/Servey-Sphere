@@ -27,7 +27,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["surveysphere.onrender.com"]
+ALLOWED_HOSTS = ['servey-sphere.onrender.com', '127.0.0.1', 'localhost']
+
 
 
 
